@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndiCal - Indian Calorie & Macro Tracker</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                        },
+                        accent: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-brand-500 to-emerald-600 p-2.5 rounded-xl text-white shadow-md shadow-brand-500/20">
+                    <i data-lucide="flame" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-brand-600 to-emerald-800 bg-clip-text text-transparent">IndiCal</span>
+                    <span class="hidden sm:inline-block text-xs font-semibold text-slate-400 ml-1.5 px-2 py-0.5 bg-slate-100 rounded-full">Indian Food Tracker</span>
+                </div>
+            </div>
+
+            <!-- Date Selector -->
+            <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/60">
+                <button id="prevDateBtn" class="p-1.5 rounded-lg hover:bg-white hover:shadow-sm text-slate-600 transition-all duration-200">
+                    <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                </button>
+                <div class="px-3 py-1 flex items-center space-x-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-brand-600"></i>
+                    <input type="date" id="datePicker" class="bg-transparent font-semibold text-sm text-slate-700 focus:outline-none cursor-pointer border-none p-0 w-28 sm:w-32">
+                </div>
+                <button id="nextDateBtn" class="p-1.5 rounded-lg hover:bg-white hover:shadow-sm text-slate-600 transition-all duration-200">
+                    <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="flex items-center space-x-2">
+                <button id="openGoalsBtn" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 border border-slate-200 transition-all duration-200">
+                    <i data-lucide="sliders" class="w-4 h-4 text-slate-500"></i>
+                    <span class="hidden md:inline">Set Goals</span>
+                </button>
+                <button id="openCustomFoodBtn" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-600/10 transition-all duration-200">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>Add Custom Food</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- LEFT COLUMN: Dashboard & Stats (5 cols on large screens) -->
+            <section class="lg:col-span-5 space-y-6">
+                
+                <!-- Calorie Progress Card -->
+                <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-brand-50 rounded-full -mr-10 -mt-10 -z-10 opacity-60 blur-2xl"></div>
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center space-x-2">
+                        <i data-lucide="activity" class="w-5 h-5 text-brand-600"></i>
+                        <span>Daily Calorie Summary</span>
+                    </h2>
+                    
+                    <div class="flex flex-col sm:flex-row items-center justify-around py-4 gap-6">
+                        <!-- Circular Progress Ring -->
+                        <div class="relative w-40 h-40 flex items-center justify-center">
+                            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+                                <!-- Background Circle -->
+                                <circle cx="60" cy="60" r="50" class="stroke-slate-100" stroke-width="10" fill="transparent" />
+                                <!-- Progress Circle -->
+                                <circle id="calorieProgressCircle" cx="60" cy="60" r="50" class="stroke-brand-500 transition-all duration-500 ease-out" stroke-width="10" fill="transparent" stroke-dasharray="314.16" stroke-dashoffset="314.16" stroke-linecap="round" />
+                            </svg>
+                            <!-- Center Text -->
+                            <div class="absolute text-center">
+                                <span id="remainingCalories" class="block text-3xl font-extrabold text-slate-800">0</span>
+                                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">kcal left</span>
+                            </div>
+                        </div>
+
+                        <!-- Calorie Breakdown Stats -->
+                        <div class="space-y-3 w-full sm:w-auto flex-1 max-w-xs">
+                            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                                <div class="flex items-center space-x-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
+                                    <span class="text-xs font-semibold text-slate-500">Target Goal</span>
+                                </div>
+                                <span id="targetCalorieText" class="text-sm font-bold text-slate-700">2,000 kcal</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                                <div class="flex items-center space-x-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-accent-500"></span>
+                                    <span class="text-xs font-semibold text-slate-500">Food Logged</span>
+                                </div>
+                                <span id="consumedCalorieText" class="text-sm font-bold text-slate-700">0 kcal</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                                <div class="flex items-center space-x-2">
+                                    <span id="statusIndicatorDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                    <span id="statusIndicatorLabel" class="text-xs font-semibold text-slate-500">Status</span>
+                                </div>
+                                <span id="statusIndicatorText" class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">On Track</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Macronutrient Breakdown Card -->
+                <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center space-x-2">
+                        <i data-lucide="pie-chart" class="w-5 h-5 text-brand-600"></i>
+                        <span>Macronutrients</span>
+                    </h2>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
+                        <!-- Chart Container -->
+                        <div class="sm:col-span-5 flex justify-center">
+                            <div class="w-32 h-32 relative">
+                                <canvas id="macroChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Macro Progress Bars -->
+                        <div class="sm:col-span-7 space-y-4">
+                            <!-- Protein -->
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-1">
+                                    <span class="text-emerald-600 flex items-center gap-1">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Protein
+                                    </span>
+                                    <span class="text-slate-500" id="proteinProgressText">0g / 120g</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                    <div id="proteinProgressBar" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Carbs -->
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-1">
+                                    <span class="text-amber-600 flex items-center gap-1">
+                                        <span class="w-2 h-2 rounded-full bg-amber-500"></span> Carbs
+                                    </span>
+                                    <span class="text-slate-500" id="carbsProgressText">0g / 230g</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                    <div id="carbsProgressBar" class="bg-amber-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Fats -->
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-1">
+                                    <span class="text-rose-600 flex items-center gap-1">
+                                        <span class="w-2 h-2 rounded-full bg-rose-500"></span> Fats
+                                    </span>
+                                    <span class="text-slate-500" id="fatsProgressText">0g / 65g</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                    <div id="fatsProgressBar" class="bg-rose-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Water Intake Card -->
+                <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm overflow-hidden relative">
+                    <div class="absolute bottom-0 left-0 right-0 h-1.5 bg-blue-500/20">
+                        <div id="waterLiquidBar" class="h-full bg-blue-500 transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
+                            <i data-lucide="droplet" class="w-5 h-5 text-blue-500"></i>
+                            <span>Water Intake</span>
+                        </h2>
+                        <span id="waterCountText" class="text-sm font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-xl">0 / 8 glasses</span>
+                    </div>
+
+                    <p class="text-xs text-slate-400 mb-4">Stay hydrated! One glass is approximately 250 ml.</p>
+
+                    <!-- Interactive Glasses Grid -->
+                    <div class="grid grid-cols-8 gap-2 mb-4" id="waterGlassesGrid">
+                        <!-- Generated dynamically by JS -->
+                    </div>
+
+                    <!-- Quick Add Buttons -->
+                    <div class="flex gap-2">
+                        <button id="addWaterBtn" class="flex-1 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Add 1 Glass (250ml)
+                        </button>
+                        <button id="resetWaterBtn" class="px-3 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-xl text-xs font-bold transition-all duration-200" title="Reset Water">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- RIGHT COLUMN: Meal Logger & Food Database (7 cols on large screens) -->
+            <section class="lg:col-span-7 space-y-6">
+                
+                <!-- Meal Logger Section -->
+                <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-slate-800 flex items-center space-x-2">
+                            <i data-lucide="utensils" class="w-5 h-5 text-brand-600"></i>
+                            <span>Today's Meals</span>
+                        </h2>
+                        <button id="clearAllMealsBtn" class="text-xs font-bold text-rose-500 hover:text-rose-600 flex items-center gap-1 transition-colors">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear All
+                        </button>
+                    </div>
+
+                    <!-- Meal Categories Accordion/List -->
+                    <div class="space-y-4">
+                        <!-- Breakfast -->
+                        <div class="border border-slate-100 rounded-2xl overflow-hidden transition-all duration-200 hover:border-slate-200">
+                            <div class="bg-slate-50/50 px-4 py-3.5 flex items-center justify-between border-b border-slate-100">
+                                <div class="flex items-center space-x-3">
+                                    <div class="p-2 bg-amber-50 text-amber-600 rounded-xl">
+                                        <i data-lucide="sunrise" class="w-4 h-4"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-slate-700 text-sm">Breakfast</h3>
+                                        <p class="text-xs text-slate-400" id="breakfastCount">0 items</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-sm font-extrabold text-slate-700" id="breakfastCalories">0 kcal</span>
+                                </div>
+                            </div>
+                            <div class="p-4 divide-y divide-slate-100/80" id="breakfastList">
+                                <!-- Logged items will appear here -->
+                                <p class="text-xs text-slate-400 text-center py-2 italic">No items logged for breakfast yet.</p>
+                            </div>
+                        </div>
+
+                        <!-- Lunch -->
+                        <div class="border border-slate-100 rounded-2xl overflow-hidden transition-all duration-200 hover:border-slate-200">
+                            <div class="bg-slate-50/50 px-4 py-3.5 flex items-center justify-between border-b border-slate-100">
+                                <div class="flex items-center space-x-3">
+                                    <div class="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                                        <i data-lucide="sun" class="w-4 h-4"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-slate-700 text-sm">Lunch</h3>
+                                        <p class="text-xs text-slate-400" id="lunchCount">0 items</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-sm font-extrabold text-slate-700" id="lunchCalories">0 kcal</span>
+                                </div>
+                            </div>
+                            <div class="p-4 divide-y divide-slate-100/80" id="lunchList">
+                                <p class="text-xs text-slate-400 text-center py-2 italic">No items logged for lunch yet.</p>
+                            </div>
+                        </div>
+
+                        <!-- Dinner -->
+                        <div class="border border-slate-100 rounded-2xl overflow-hidden transition-all duration-200 hover:border-slate-200">
+                            <div class="bg-slate-50/50 px-4 py-3.5 flex items-center justify-between border-b border-slate-100">
+                                <div class="flex items-center space-x-3">
+                                    <div class="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                                        <i data-lucide="sunset" class="w-4 h-4"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-slate-700 text-sm">Dinner</h3>
+                                        <p class="text-xs text-slate-400" id="dinnerCount">0 items</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-sm font-extrabold text-slate-700" id="dinnerCalories">0 kcal</span>
+                                </div>
+                            </div>
+                            <div class="p-4 divide-y divide-slate-100/80" id="dinnerList">
+                                <p class="text-xs text-slate-400 text-center py-2 italic">No items logged for dinner yet.</p>
+                            </div>
+                        </div>
+
+                        <!-- Snacks -->
+                        <div class="border border-slate-100 rounded-2xl overflow-hidden transition-all duration-200 hover:border-slate-200">
+                            <div class="bg-slate-50/50 px-4 py-3.5 flex items-center justify-between border-b border-slate-100">
+                                <div class="flex items-center space-x-3">
+                                    <div class="p-2 bg-rose-50 text-rose-600 rounded-xl">
+                                        <i data-lucide="apple" class="w-4 h-4"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-slate-700 text-sm">Snacks & Drinks</h3>
+                                        <p class="text-xs text-slate-400" id="snacksCount">0 items</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-sm font-extrabold text-slate-700" id="snacksCalories">0 kcal</span>
+                                </div>
+                            </div>
+                            <div class="p-4 divide-y divide-slate-100/80" id="snacksList">
+                                <p class="text-xs text-slate-400 text-center py-2 italic">No items logged for snacks yet.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Food Database & Search Section -->
+                <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800 flex items-center space-x-2">
+                                <i data-lucide="search" class="w-5 h-5 text-brand-600"></i>
+                                <span>Indian Food Database</span>
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-0.5">Search and add traditional Indian dishes to your daily log</p>
+                        </div>
+                    </div>
+
+                    <!-- Search and Filter Controls -->
+                    <div class="space-y-4 mb-6">
+                        <!-- Search Input -->
+                        <div class="relative">
+                            <i data-lucide="search" class="absolute left-4 top-3.5 w-5 h-5 text-slate-400"></i>
+                            <input type="text" id="foodSearchInput" placeholder="Search Roti, Biryani, Paneer, Samosa..." class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200">
+                        </div>
+
+                        <!-- Category Filter Pills -->
+                        <div class="flex flex-wrap gap-1.5" id="categoryFilters">
+                            <button class="category-pill active px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200" data-category="all">All</button>
+                            <button class="category-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200" data-category="Breads">Breads</button>
+                            <button class="category-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200" data-category="Curries">Curries</button>
+                            <button class="category-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200" data-category="Rice/Biryani">Rice & Biryani</button>
+                            <button class="category-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200" data-category="Snacks/Breakfast">Snacks & Breakfast</button>
+                            <button class="category-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200" data-category="Desserts">Desserts</button>
+                            <button class="category-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200" data-category="Drinks">Drinks</button>
+                            <button class="category-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200" data-category="Custom">Custom</button>
+                        </div>
+                    </div>
+
+                    <!-- Food Items List -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2" id="foodDatabaseList">
+                        <!-- Food cards will be rendered here dynamically -->
+                    </div>
+                </div>
+
+            </section>
+
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-100 mt-16 py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-slate-400 text-xs space-y-2">
+            <p class="font-semibold text-slate-500">IndiCal — Modern Indian Calorie & Macronutrient Tracker</p>
+            <p>All nutritional values are approximate and based on standard Indian recipes. Consult a nutritionist for precise dietary advice.</p>
+            <p>&copy; <span id="currentYear"></span> IndiCal. Built with health & passion.</p>
+        </div>
+    </footer>
+
+    <!-- MODAL 1: GOAL SETTINGS -->
+    <div id="goalModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl w-full max-w-md p-6 mx-4 shadow-2xl transform scale-95 transition-transform duration-300">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="sliders" class="w-5 h-5 text-brand-600"></i>
+                    <span>Adjust Daily Goals</span>
+                </h3>
+                <button class="close-modal-btn p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="goalForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Daily Calorie Goal (kcal)</label>
+                    <input type="number" id="goalCalories" required min="500" max="10000" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Protein (g)</label>
+                        <input type="number" id="goalProtein" required min="10" max="500" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Carbs (g)</label>
+                        <input type="number" id="goalCarbs" required min="10" max="1000" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Fats (g)</label>
+                        <input type="number" id="goalFats" required min="5" max="300" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Water Goal (glasses - 250ml each)</label>
+                    <input type="number" id="goalWater" required min="4" max="30" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+                </div>
+
+                <div class="flex gap-3 pt-4">
+                    <button type="button" class="close-modal-btn flex-1 py-2.5 border border-slate-200 text-slate-500 hover:bg-slate-50 rounded-xl text-sm font-bold transition-colors">Cancel</button>
+                    <button type="submit" class="flex-1 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-bold shadow-md shadow-brand-600/10 transition-colors">Save Goals</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: CREATE CUSTOM FOOD -->
+    <div id="customFoodModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl w-full max-w-md p-6 mx-4 shadow-2xl transform scale-95 transition-transform duration-300">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-brand-600"></i>
+                    <span>Create Custom Food</span>
+                </h3>
+                <button class="close-modal-btn p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="customFoodForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Food Name</label>
+                    <input type="text" id="customFoodName" required placeholder="e.g., Homemade Paneer Bhurji" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Category</label>
+                        <select id="customFoodCategory" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+                            <option value="Breads">Breads</option>
+                            <option value="Curries">Curries</option>
+                            <option value="Rice/Biryani">Rice & Biryani</option>
+                            <option value="Snacks/Breakfast">Snacks & Breakfast</option>
+                            <option value="Desserts">Desserts</option>
+                            <option value="Drinks">Drinks</option>
+                            <option value="Other" selected>Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Serving Size</label>
+                        <input type="text" id="customFoodServing" required placeholder="e.g., 1 cup, 100g" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Calories (kcal)</label>
+                        <input type="number" id="customFoodCalories" required min="0" max="5000" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Protein (g)</label>
+                        <input type="number" id="customFoodProtein" required min="0" max="300" step="0.1" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Carbs (g)</label>
+                        <input type="number" id="customFoodCarbs" required min="0" max="500" step="0.1" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Fats (g)</label>
+                        <input type="number" id="customFoodFats" required min="0" max="300" step="0.1" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-4">
+                    <button type="button" class="close-modal-btn flex-1 py-2.5 border border-slate-200 text-slate-500 hover:bg-slate-50 rounded-xl text-sm font-bold transition-colors">Cancel</button>
+                    <button type="submit" class="flex-1 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-bold shadow-md shadow-brand-600/10 transition-colors">Create Food</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: ADD FOOD TO LOG -->
+    <div id="addFoodModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl w-full max-w-md p-6 mx-4 shadow-2xl transform scale-95 transition-transform duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="plus" class="w-5 h-5 text-brand-600"></i>
+                    <span>Add Food to Log</span>
+                </h3>
+                <button class="close-modal-btn p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Selected Food Info Card -->
+            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-5">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <h4 id="modalFoodName" class="font-bold text-slate-800 text-base">Food Name</h4>
+                        <p id="modalFoodServing" class="text-xs text-slate-400">Serving: 1 piece</p>
+                    </div>
+                    <span id="modalFoodBaseCalories" class="text-xs font-bold text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded-md">120 kcal</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center pt-2 border-t border-slate-200/40">
+                    <div class="bg-white/60 rounded-lg p-1.5">
+                        <span class="block text-[10px] font-bold text-slate-400 uppercase">Protein</span>
+                        <span id="modalFoodBaseProtein" class="text-xs font-bold text-emerald-600">0g</span>
+                    </div>
+                    <div class="bg-white/60 rounded-lg p-1.5">
+                        <span class="block text-[10px] font-bold text-slate-400 uppercase">Carbs</span>
+                        <span id="modalFoodBaseCarbs" class="text-xs font-bold text-amber-600">0g</span>
+                    </div>
+                    <div class="bg-white/60 rounded-lg p-1.5">
+                        <span class="block text-[10px] font-bold text-slate-400 uppercase">Fats</span>
+                        <span id="modalFoodBaseFats" class="text-xs font-bold text-rose-600">0g</span>
+                    </div>
+                </div>
+            </div>
+
+            <form id="addFoodForm" class="space-y-4">
+                <!-- Meal Type Selection -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Select Meal</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="mealType" value="breakfast" checked class="peer sr-only">
+                            <div class="peer-checked:bg-amber-50 peer-checked:border-amber-500 peer-checked:text-amber-700 border border-slate-200 rounded-xl p-2.5 text-center text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all">
+                                <i data-lucide="sunrise" class="w-4 h-4 mx-auto mb-1"></i>
+                                Breakfast
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="mealType" value="lunch" class="peer sr-only">
+                            <div class="peer-checked:bg-emerald-50 peer-checked:border-emerald-500 peer-checked:text-emerald-700 border border-slate-200 rounded-xl p-2.5 text-center text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all">
+                                <i data-lucide="sun" class="w-4 h-4 mx-auto mb-1"></i>
+                                Lunch
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="mealType" value="dinner" class="peer sr-only">
+                            <div class="peer-checked:bg-indigo-50 peer-checked:border-indigo-500 peer-checked:text-indigo-700 border border-slate-200 rounded-xl p-2.5 text-center text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all">
+                                <i data-lucide="sunset" class="w-4 h-4 mx-auto mb-1"></i>
+                                Dinner
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="mealType" value="snacks" class="peer sr-only">
+                            <div class="peer-checked:bg-rose-50 peer-checked:border-rose-500 peer-checked:text-rose-700 border border-slate-200 rounded-xl p-2.5 text-center text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all">
+                                <i data-lucide="apple" class="w-4 h-4 mx-auto mb-1"></i>
+                                Snacks
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Servings Multiplier -->
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Number of Servings</label>
+                        <span id="servingsValueDisplay" class="text-xs font-extrabold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md">1.0 serving</span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button type="button" id="decreaseServingsBtn" class="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors">
+                            <i data-lucide="minus" class="w-4 h-4"></i>
+                        </button>
+                        <input type="number" id="servingsInput" value="1" min="0.1" max="20" step="0.1" required class="w-full text-center px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+                        <button type="button" id="increaseServingsBtn" class="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Live Preview Card -->
+                <div class="bg-brand-50/50 border border-brand-100 rounded-2xl p-4">
+                    <span class="block text-[10px] font-bold text-brand-600 uppercase tracking-wider mb-2">Total Log Preview</span>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span id="previewCalories" class="text-2xl font-extrabold text-brand-700">120</span>
+                            <span class="text-xs font-bold text-brand-600"> kcal</span>
+                        </div>
+                        <div class="flex space-x-3 text-xs font-bold text-slate-600">
+                            <div>P: <span id="previewProtein" class="text-emerald-600">0g</span></div>
+                            <div>C: <span id="previewCarbs" class="text-amber-600">0g</span></div>
+                            <div>F: <span id="previewFats" class="text-rose-600">0g</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button type="button" class="close-modal-btn flex-1 py-2.5 border border-slate-200 text-slate-500 hover:bg-slate-50 rounded-xl text-sm font-bold transition-colors">Cancel</button>
+                    <button type="submit" class="flex-1 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-bold shadow-md shadow-brand-600/10 transition-colors">Add to Log</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Core Application Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
