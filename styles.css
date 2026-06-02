@@ -1,0 +1,104 @@
+/* Custom Styles to complement Tailwind CSS */
+
+/* Smooth transitions */
+.transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+}
+
+/* Custom Scrollbar for Food Database */
+#foodDatabaseList::-webkit-scrollbar {
+    width: 6px;
+}
+
+#foodDatabaseList::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+#foodDatabaseList::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+#foodDatabaseList::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Category Filter Pills styling */
+.category-pill {
+    background-color: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.category-pill:hover {
+    background-color: #e2e8f0;
+    color: #334155;
+}
+
+.category-pill.active {
+    background-color: #10b981;
+    color: #ffffff;
+    border-color: #10b981;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+/* Water glass styling */
+.water-glass {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+    background-color: #ffffff;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.water-glass:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    transform: translateY(-2px);
+}
+
+.water-glass.filled {
+    background-color: #eff6ff;
+    border-color: #3b82f6;
+    color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    animation: splash 0.3s ease-out;
+}
+
+@keyframes splash {
+    0% {
+        transform: scale(0.9);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Modal animations */
+.modal-active {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+.modal-active > div {
+    transform: scale(1) !important;
+}
+
+/* Glassmorphism card effect */
+.glass-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
