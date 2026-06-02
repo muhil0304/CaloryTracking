@@ -1,0 +1,118 @@
+/* Custom Scrollbar Styles */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.25);
+  border-radius: 10px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.45);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.3);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(75, 85, 99, 0.5);
+}
+
+/* Water Cup & Wave Animation */
+.water-cup {
+  position: relative;
+  width: 140px;
+  height: 180px;
+  border: 5px solid #38bdf8;
+  border-top: none;
+  border-radius: 0 0 24px 24px;
+  overflow: hidden;
+  background: rgba(56, 189, 248, 0.05);
+  box-shadow: 0 10px 25px -5px rgba(56, 189, 248, 0.15), inset 0 -10px 20px -5px rgba(56, 189, 248, 0.1);
+}
+
+.water-cup::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: rgba(56, 189, 248, 0.2);
+  border-radius: 50%;
+}
+
+.water-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+  transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.water-wave::after {
+  content: "";
+  position: absolute;
+  width: 240%;
+  height: 240%;
+  top: -225%;
+  left: -70%;
+  background-color: rgba(255, 255, 255, 0.25);
+  border-radius: 38%;
+  animation: wave-spin 8s linear infinite;
+}
+
+.water-wave::before {
+  content: "";
+  position: absolute;
+  width: 230%;
+  height: 230%;
+  top: -220%;
+  left: -60%;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 40%;
+  animation: wave-spin 12s linear infinite;
+}
+
+@keyframes wave-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Custom Transitions & Animations */
+.modal-active {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.modal-active > div {
+  transform: scale(1) !important;
+}
+
+/* Toast Animation */
+@keyframes slide-in {
+  0% {
+    transform: translateY(-1rem) scale(0.9);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.toast-animate {
+  animation: slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
