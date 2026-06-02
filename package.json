@@ -1,0 +1,14 @@
+{
+  "name": "calory-tracking-root",
+  "version": "1.0.0",
+  "description": "Indian Food Calorie Tracker",
+  "scripts": {
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "backend": "cd backend && npm start",
+    "frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "prebuild": "npm run install-all",
+    "prepare": "npm run install-all",
+    "start": "npx concurrently \"npm run backend\" \"npm run frontend\""
+  }
+}
