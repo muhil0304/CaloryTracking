@@ -355,7 +355,10 @@ export default function App() {
   const fatPercent = Math.min(Math.round((stats.total_fat / goalFat) * 100), 100);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-12">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-16 relative">
+      <footer className="absolute bottom-0 left-0 right-0 text-center py-4 text-sm text-slate-500 border-t border-slate-100 bg-white">
+        © 2026 Calory Tracker
+      </footer>
       {/* Header */}
       <header className="bg-white border-b border-slate-100 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
