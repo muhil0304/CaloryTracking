@@ -1,0 +1,22 @@
+{
+  "name": "calory-tracking",
+  "version": "1.0.0",
+  "description": "Indian Food Calorie Tracker with React and SQLite",
+  "main": "server.js",
+  "scripts": {
+    "prestart": "npm install express cors sqlite3 concurrently",
+    "start": "node server.js",
+    "server": "node server.js",
+    "client": "npm run dev --prefix frontend",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "install-all": "npm install && npm install --prefix frontend",
+    "prebuild": "npm install express cors sqlite3 concurrently && npm install --prefix frontend",
+    "build": "npm run build --prefix frontend"
+  },
+  "dependencies": {
+    "concurrently": "^9.2.1",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "sqlite3": "^6.0.1"
+  }
+}
