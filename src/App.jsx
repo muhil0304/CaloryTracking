@@ -19,8 +19,10 @@ import {
   LogOut,
   User
 } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import Login from './components/Login';
 import Signup from './components/Signup';
+import Footer from './components/Footer';
 
 export default function App() {
   // Date helper to get local YYYY-MM-DD string
@@ -356,6 +358,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-12">
+      {createPortal(<Footer />, document.body)}
       {/* Header */}
       <header className="bg-white border-b border-slate-100 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
