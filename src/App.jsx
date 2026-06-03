@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Footer from './Footer';
 import { 
   Plus, 
   Search, 
@@ -289,7 +290,8 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-12">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <Footer />
       {/* Toast Notification */}
       {toast && (
         <div className={`fixed bottom-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border transition-all duration-300 transform translate-y-0 ${
