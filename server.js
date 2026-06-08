@@ -1,182 +1,90 @@
-const express = require('express');
-const cors = require('cors');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import sqlite3 from 'sqlite3';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-
 app.use(cors());
 app.use(express.json());
 
-// Serve static files from the React app build
-app.use(express.static(path.join(__dirname, 'dist')));
+// SQLite Database Setup
+const db = new sqlite3.Database('calories.db');
 
-// Connect to SQLite database
-const dbPath = path.join(__dirname, 'database.sqlite');
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Error opening database:', err.message);
-  } else {
-    console.log('Connected to SQLite database.');
-    initializeDatabase();
-  }
-});
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS foods (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      calories REAL NOT NULL,
+      carbs REAL DEFAULT 0,
+      protein REAL DEFAULT 0,
+      fat REAL DEFAULT 0,
+      serving_size TEXT DEFAULT '1 serving'
+    )
+  `);
 
-function initializeDatabase() {
-  db.serialize(() => {
-    // Create Users table
-    db.run(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL
-      )
-    `);
+  db.run(`
+    CREATE TABLE IF NOT EXISTS logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      food_id INTEGER NOT NULL,
+      quantity REAL NOT NULL,
+      date TEXT NOT NULL,
+      FOREIGN KEY (food_id) REFERENCES foods(id)
+    )
+  `);
 
-    // Create Foods table
-    db.run(`
-      CREATE TABLE IF NOT EXISTS foods (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        serving_size TEXT NOT NULL,
-        calories REAL NOT NULL,
-        protein REAL NOT NULL,
-        carbs REAL NOT NULL,
-        fat REAL NOT NULL
-      )
-    `);
-
-    // Create Logs table
-    db.run(`
-      CREATE TABLE IF NOT EXISTS logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        food_id INTEGER,
-        food_name TEXT NOT NULL,
-        quantity REAL NOT NULL,
-        date TEXT NOT NULL,
-        calories REAL NOT NULL,
-        protein REAL NOT NULL,
-        carbs REAL NOT NULL,
-        fat REAL NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users (id)
-      )
-    `);
-
-    // Create Goals table
-    db.run(`
-      CREATE TABLE IF NOT EXISTS goals (
-        user_id INTEGER PRIMARY KEY,
-        calories REAL NOT NULL DEFAULT 2000,
-        protein REAL NOT NULL DEFAULT 120,
-        carbs REAL NOT NULL DEFAULT 250,
-        fat REAL NOT NULL DEFAULT 65,
-        FOREIGN KEY (user_id) REFERENCES users (id)
-      )
-    `);
-
-    // Seed Indian Foods if empty
-    db.get("SELECT COUNT(*) as count FROM foods", (err, row) => {
-      if (err) {
-        console.error("Error checking foods count:", err.message);
-        return;
+  // Pre-populate with 20+ common Indian foods if empty
+  db.get("SELECT COUNT(*) as count FROM foods", (err, row) => {
+    if (row && row.count === 0) {
+      const stmt = db.prepare(`
+        INSERT INTO foods (name, calories, carbs, protein, fat, serving_size)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+      const indianFoods = [
+        { name: 'Roti', calories: 85, carbs: 18, protein: 3, fat: 0.5, serving_size: '1 medium' },
+        { name: 'White Rice', calories: 205, carbs: 45, protein: 4.2, fat: 0.4, serving_size: '1 cup cooked' },
+        { name: 'Dal Tadka', calories: 150, carbs: 20, protein: 8, fat: 4, serving_size: '1 cup' },
+        { name: 'Paneer Butter Masala', calories: 320, carbs: 12, protein: 14, fat: 24, serving_size: '1 cup' },
+        { name: 'Chicken Tikka Masala', calories: 360, carbs: 14, protein: 28, fat: 20, serving_size: '1 cup' },
+        { name: 'Idli', calories: 120, carbs: 25, protein: 4, fat: 0.5, serving_size: '2 pieces' },
+        { name: 'Sambar', calories: 90, carbs: 12, protein: 4, fat: 3, serving_size: '1 cup' },
+        { name: 'Masala Dosa', calories: 250, carbs: 40, protein: 5, fat: 8, serving_size: '1 piece' },
+        { name: 'Chole Bhature', calories: 450, carbs: 55, protein: 12, fat: 20, serving_size: '1 plate' },
+        { name: 'Aloo Paratha', calories: 210, carbs: 32, protein: 4, fat: 7, serving_size: '1 piece' },
+        { name: 'Vegetable Biryani', calories: 220, carbs: 38, protein: 5, fat: 5, serving_size: '1 cup' },
+        { name: 'Samosa', calories: 150, carbs: 18, protein: 3, fat: 7.5, serving_size: '1 piece' },
+        { name: 'Chai with Milk & Sugar', calories: 75, carbs: 12, protein: 2, fat: 2, serving_size: '1 cup' },
+        { name: 'Filter Coffee', calories: 60, carbs: 8, protein: 2, fat: 2, serving_size: '1 cup' },
+        { name: 'Gulab Jamun', calories: 150, carbs: 24, protein: 2, fat: 5, serving_size: '1 piece' },
+        { name: 'Poha', calories: 180, carbs: 35, protein: 3, fat: 3, serving_size: '1 cup' },
+        { name: 'Upma', calories: 190, carbs: 32, protein: 4, fat: 5, serving_size: '1 cup' },
+        { name: 'Tandoori Chicken', calories: 150, carbs: 1, protein: 22, fat: 6, serving_size: '100g' },
+        { name: 'Palak Paneer', calories: 220, carbs: 10, protein: 12, fat: 16, serving_size: '1 cup' },
+        { name: 'Mixed Vegetable Sabzi', calories: 110, carbs: 14, protein: 3, fat: 5, serving_size: '1 cup' },
+        { name: 'Curd (Yogurt)', calories: 100, carbs: 6, protein: 5, fat: 4, serving_size: '1 cup' }
+      ];
+      for (const food of indianFoods) {
+        stmt.run(food.name, food.calories, food.carbs, food.protein, food.fat, food.serving_size);
       }
-      if (row.count === 0) {
-        const stmt = db.prepare(`
-          INSERT INTO foods (name, serving_size, calories, protein, carbs, fat)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `);
-        const defaultFoods = [
-          ["Roti", "1 piece", 85, 3, 18, 0.5],
-          ["Rice (Cooked)", "1 cup", 205, 4, 44, 0.4],
-          ["Dal Tadka", "1 bowl", 150, 8, 20, 4],
-          ["Paneer Butter Masala", "1 plate", 350, 12, 10, 28],
-          ["Chicken Tikka Masala", "1 plate", 400, 30, 12, 25],
-          ["Samosa", "1 piece", 250, 4, 32, 12],
-          ["Idli", "2 pieces", 120, 4, 25, 0.5],
-          ["Dosa (Plain)", "1 piece", 165, 4, 29, 3.5],
-          ["Chole Bhature", "1 plate", 450, 12, 55, 20],
-          ["Mixed Veg Curry", "1 bowl", 120, 3, 15, 6],
-          ["Alu Paratha", "1 piece", 290, 6, 45, 10],
-          ["Gulab Jamun", "2 pieces", 300, 4, 50, 10],
-          ["Greek Yogurt", "1 cup", 130, 15, 6, 4],
-          ["Boiled Egg", "1 large", 78, 6, 0.6, 5],
-          ["Apple", "1 medium", 95, 0.5, 25, 0.3],
-          ["Banana", "1 medium", 105, 1.3, 27, 0.3]
-        ];
-        for (const food of defaultFoods) {
-          stmt.run(food);
-        }
-        stmt.finalize();
-        console.log("Seeded default Indian foods.");
-      }
-    });
+      stmt.finalize();
+
+      // Seed some logs for today
+      const today = new Date().toISOString().split('T')[0];
+      db.run(`
+        INSERT INTO logs (food_id, quantity, date)
+        VALUES (1, 2, ?), (3, 1, ?)
+      `, [today, today]);
+    }
   });
-}
-
-// Auth APIs
-app.post('/api/signup', (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password are required.' });
-  }
-
-  db.run(
-    'INSERT INTO users (username, password) VALUES (?, ?)',
-    [username, password],
-    function (err) {
-      if (err) {
-        if (err.message.includes('UNIQUE constraint failed')) {
-          return res.status(400).json({ error: 'Username already exists.' });
-        }
-        return res.status(500).json({ error: err.message });
-      }
-      const userId = this.lastID;
-      // Create default goals for the user
-      db.run(
-        'INSERT INTO goals (user_id, calories, protein, carbs, fat) VALUES (?, 2000, 120, 250, 65)',
-        [userId],
-        (goalErr) => {
-          if (goalErr) {
-            console.error('Error creating default goals:', goalErr.message);
-          }
-          res.status(201).json({ message: 'User registered successfully.', userId });
-        }
-      );
-    }
-  );
 });
 
-app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password are required.' });
-  }
-
-  db.get(
-    'SELECT id, username, password FROM users WHERE username = ?',
-    [username],
-    (err, user) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      if (!user || user.password !== password) {
-        return res.status(401).json({ error: 'Invalid username or password.' });
-      }
-      res.json({
-        user: {
-          id: user.id,
-          username: user.username
-        }
-      });
-    }
-  );
-});
-
-// Foods APIs
+// API Routes
 app.get('/api/foods', (req, res) => {
-  db.all('SELECT * FROM foods ORDER BY name ASC', [], (err, rows) => {
+  db.all("SELECT * FROM foods ORDER BY name ASC", [], (err, rows) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -185,22 +93,21 @@ app.get('/api/foods', (req, res) => {
 });
 
 app.post('/api/foods', (req, res) => {
-  const { name, serving_size, calories, protein, carbs, fat } = req.body;
-  if (!name || !serving_size) {
-    return res.status(400).json({ error: 'Name and serving size are required.' });
+  const { name, calories, carbs, protein, fat, serving_size } = req.body;
+  if (!name || calories === undefined) {
+    return res.status(400).json({ error: 'Name and calories are required' });
   }
-
-  db.run(
-    `INSERT INTO foods (name, serving_size, calories, protein, carbs, fat)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [
-      name,
-      serving_size,
-      parseFloat(calories) || 0,
-      parseFloat(protein) || 0,
-      parseFloat(carbs) || 0,
-      parseFloat(fat) || 0
-    ],
+  const stmt = db.prepare(`
+    INSERT INTO foods (name, calories, carbs, protein, fat, serving_size)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+  stmt.run(
+    name,
+    Number(calories),
+    Number(carbs) || 0,
+    Number(protein) || 0,
+    Number(fat) || 0,
+    serving_size || '1 serving',
     function (err) {
       if (err) {
         return res.status(500).json({ error: err.message });
@@ -208,199 +115,105 @@ app.post('/api/foods', (req, res) => {
       res.status(201).json({
         id: this.lastID,
         name,
-        serving_size,
-        calories: parseFloat(calories) || 0,
-        protein: parseFloat(protein) || 0,
-        carbs: parseFloat(carbs) || 0,
-        fat: parseFloat(fat) || 0
+        calories: Number(calories),
+        carbs: Number(carbs) || 0,
+        protein: Number(protein) || 0,
+        fat: Number(fat) || 0,
+        serving_size: serving_size || '1 serving'
       });
     }
   );
+  stmt.finalize();
 });
 
-// Logs APIs
 app.get('/api/logs', (req, res) => {
-  const { date, userId } = req.query;
-  if (!date || !userId) {
-    return res.status(400).json({ error: 'Date and userId are required.' });
+  const { date } = req.query;
+  if (!date) {
+    return res.status(400).json({ error: 'Date query parameter is required' });
   }
-
-  db.all(
-    'SELECT * FROM logs WHERE date = ? AND user_id = ? ORDER BY id DESC',
-    [date, userId],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      res.json(rows);
+  const query = `
+    SELECT l.id, l.food_id, l.quantity, l.date,
+           f.name, f.calories, f.carbs, f.protein, f.fat, f.serving_size
+    FROM logs l
+    JOIN foods f ON l.food_id = f.id
+    WHERE l.date = ?
+  `;
+  db.all(query, [date], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
     }
-  );
+    const formattedLogs = rows.map(row => ({
+      id: row.id,
+      food_id: row.food_id,
+      quantity: row.quantity,
+      date: row.date,
+      food: {
+        id: row.food_id,
+        name: row.name,
+        calories: row.calories,
+        carbs: row.carbs,
+        protein: row.protein,
+        fat: row.fat,
+        serving_size: row.serving_size
+      }
+    }));
+    res.json(formattedLogs);
+  });
 });
 
 app.post('/api/logs', (req, res) => {
-  const {
-    user_id,
-    food_id,
-    food_name,
-    quantity,
-    date,
-    calories,
-    protein,
-    carbs,
-    fat
-  } = req.body;
-
-  if (!user_id || !food_name || !quantity || !date) {
-    return res.status(400).json({ error: 'Missing required fields.' });
+  const { food_id, quantity, date } = req.body;
+  if (!food_id || !quantity || !date) {
+    return res.status(400).json({ error: 'food_id, quantity, and date are required' });
   }
-
-  db.run(
-    `INSERT INTO logs (user_id, food_id, food_name, quantity, date, calories, protein, carbs, fat)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      user_id,
-      food_id || null,
-      food_name,
-      parseFloat(quantity),
-      date,
-      parseFloat(calories) || 0,
-      parseFloat(protein) || 0,
-      parseFloat(carbs) || 0,
-      parseFloat(fat) || 0
-    ],
-    function (err) {
+  db.get("SELECT * FROM foods WHERE id = ?", [Number(food_id)], (err, food) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    if (!food) {
+      return res.status(404).json({ error: 'Food not found' });
+    }
+    const stmt = db.prepare(`
+      INSERT INTO logs (food_id, quantity, date)
+      VALUES (?, ?, ?)
+    `);
+    stmt.run(Number(food_id), Number(quantity), date, function (err) {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
       res.status(201).json({
         id: this.lastID,
-        user_id,
-        food_id,
-        food_name,
-        quantity,
+        food_id: Number(food_id),
+        quantity: Number(quantity),
         date,
-        calories,
-        protein,
-        carbs,
-        fat
+        food
       });
-    }
-  );
-});
-
-app.delete('/api/logs/:id', (req, res) => {
-  const { id } = req.params;
-  db.run('DELETE FROM logs WHERE id = ?', [id], function (err) {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.json({ message: 'Log deleted successfully.', deletedCount: this.changes });
+    });
+    stmt.finalize();
   });
 });
 
-// Stats & Goals APIs
-app.get('/api/stats', (req, res) => {
-  const { date, userId } = req.query;
-  if (!date || !userId) {
-    return res.status(400).json({ error: 'Date and userId are required.' });
-  }
-
-  // Get daily totals
-  db.get(
-    `SELECT 
-      SUM(calories * quantity) as total_calories,
-      SUM(protein * quantity) as total_protein,
-      SUM(carbs * quantity) as total_carbs,
-      SUM(fat * quantity) as total_fat
-     FROM logs 
-     WHERE date = ? AND user_id = ?`,
-    [date, userId],
-    (err, totals) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-
-      // Get user goals
-      db.get(
-        'SELECT calories, protein, carbs, fat FROM goals WHERE user_id = ?',
-        [userId],
-        (goalErr, goals) => {
-          if (goalErr) {
-            return res.status(500).json({ error: goalErr.message });
-          }
-
-          const defaultGoals = { calories: 2000, protein: 120, carbs: 250, fat: 65 };
-          const userGoals = goals || defaultGoals;
-
-          res.json({
-            total_calories: Math.round(totals?.total_calories || 0),
-            total_protein: Math.round(totals?.total_protein || 0),
-            total_carbs: Math.round(totals?.total_carbs || 0),
-            total_fat: Math.round(totals?.total_fat || 0),
-            goals: {
-              calories: userGoals.calories,
-              protein: userGoals.protein,
-              carbs: userGoals.carbs,
-              fat: userGoals.fat
-            }
-          });
-        }
-      );
+app.delete('/api/logs/:id', (req, res) => {
+  const id = Number(req.params.id);
+  db.run("DELETE FROM logs WHERE id = ?", [id], function (err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
     }
-  );
+    if (this.changes === 0) {
+      return res.status(404).json({ error: 'Log not found' });
+    }
+    res.status(204).end();
+  });
 });
 
-// Support multiple endpoints for updating goals to be safe
-const updateGoalsHandler = (req, res) => {
-  const { userId, calories, protein, carbs, fat } = req.body;
-  const uId = userId || req.params.userId || req.query.userId;
+// Serve static files in production
+app.use(express.static(path.join(__dirname, 'dist')));
 
-  if (!uId) {
-    return res.status(400).json({ error: 'User ID is required.' });
-  }
-
-  db.run(
-    `INSERT INTO goals (user_id, calories, protein, carbs, fat)
-     VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(user_id) DO UPDATE SET
-      calories = excluded.calories,
-      protein = excluded.protein,
-      carbs = excluded.carbs,
-      fat = excluded.fat`,
-    [
-      uId,
-      parseFloat(calories) || 2000,
-      parseFloat(protein) || 120,
-      parseFloat(carbs) || 250,
-      parseFloat(fat) || 65
-    ],
-    function (err) {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      res.json({
-        message: 'Goals updated successfully.',
-        goals: {
-          calories: parseFloat(calories) || 2000,
-          protein: parseFloat(protein) || 120,
-          carbs: parseFloat(carbs) || 250,
-          fat: parseFloat(fat) || 65
-        }
-      });
-    }
-  );
-};
-
-app.post('/api/goals', updateGoalsHandler);
-app.put('/api/goals', updateGoalsHandler);
-app.post('/api/goals/:userId', updateGoalsHandler);
-app.put('/api/goals/:userId', updateGoalsHandler);
-
-// All other GET requests not handled before will return the React app
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
